@@ -4,6 +4,7 @@ module;
 #include <Audioclient.h>
 #include <fstream>
 #include <filesystem>
+#include <thread>
 export module AudioPlayer;
 
 #if _DEBUG
@@ -56,7 +57,7 @@ export class AudioPlayer
 	IAudioClient* client;
 	IAudioRenderClient* renderer;
 
-	IMMDevice* GetDevice()
+	IMMDevice* GetDevice() const
 	{
 		HRESULT result;
 
@@ -101,7 +102,7 @@ export class AudioPlayer
 		result = client->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &dataFormat, &altFormat);
 		ASSERT_RESULT(result);
 
-		constexpr double bufferSecondDuration = 10;
+		constexpr double bufferSecondDuration = 2;
 		result = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY, bufferSecondDuration * refTimesPerSec, 0, &dataFormat, NULL);
 		ASSERT_RESULT(result);
 
@@ -115,17 +116,19 @@ export class AudioPlayer
 		device->Release();
 	}
 
-	void WriteSilence(UINT32 silenceFrames = 2)
+	void WriteSilence(const UINT32 silenceFrames = 2, WORD blockAlign = 0) const
 	{
+		if (!blockAlign) blockAlign = format.GetBlockAlign();
 		HRESULT result;
 		BYTE* stream = nullptr;
 		result = renderer->GetBuffer(silenceFrames, &stream);
 		ASSERT_RESULT(result);
+		memset(stream, 0, silenceFrames * blockAlign);
 		result = renderer->ReleaseBuffer(silenceFrames, AUDCLNT_BUFFERFLAGS_SILENT);
 		ASSERT_RESULT(result);
 	}
 
-	void Write(AudioData data)
+	void Write(const AudioData data) const
 	{
 		HRESULT result;
 
@@ -135,47 +138,57 @@ export class AudioPlayer
 		result = client->GetBufferSize(&bufferFrameSize);
 		ASSERT_RESULT(result);
 
+		WriteSilence(8, blockAlign);
 		result = client->Start();
 		ASSERT_RESULT(result);
 
 		const auto bufferRefSecDuration = refTimesPerSec * bufferFrameSize / format.sampleRate;
-		const auto dataFrames = data.length / blockAlign;
 
-		WriteSilence(4);
-		unsigned int writtenFrames = 0;
+		unsigned int writtenBytes = 0;
 		BYTE* out;
-		while (writtenFrames < dataFrames)
+		while (writtenBytes < data.length)
 		{
 			UINT32 existingFrames;
 			result = client->GetCurrentPadding(&existingFrames);
 			ASSERT_RESULT(result);
 
 			const UINT32 availableFrames = bufferFrameSize - existingFrames;
+			const UINT32 availableBytes = availableFrames * blockAlign;
+			UINT32 framesToRequest = availableFrames;
+			UINT32 byteCount = availableBytes;
 
-			result = renderer->GetBuffer(availableFrames, &out);
+			const auto nextPos = writtenBytes + availableBytes;
+			if (nextPos > data.length)
+			{
+				byteCount = data.length - writtenBytes;
+				framesToRequest = byteCount / blockAlign;
+			}
+
+			result = renderer->GetBuffer(framesToRequest, &out);
 			ASSERT_RESULT(result);
 
-			const auto writtenBytes = writtenFrames * blockAlign;
-			const auto availableBytes = availableFrames * blockAlign;
-			std::copy_n(data.ptr + writtenBytes, availableBytes, out);
-			result = renderer->ReleaseBuffer(availableFrames, 0);
+			std::copy_n(data.ptr + writtenBytes, byteCount, out);
+
+			result = renderer->ReleaseBuffer(framesToRequest, 0);
 			ASSERT_RESULT(result);
 
-			writtenFrames += availableFrames;
-			Sleep(bufferRefSecDuration / refTimesPerMs);
+			writtenBytes += byteCount;
+			Sleep(bufferRefSecDuration / refTimesPerMs / 3);
 		}
 
+		WriteSilence(8, blockAlign);
+		Sleep(bufferRefSecDuration / refTimesPerMs / 3);
 		result = client->Stop();
 		ASSERT_RESULT(result);
 	}
 
 	public:
-	void Play(AudioData data)
+	void Play(const AudioData data) const
 	{
 		Write(data);
 	}
 
-	void Play(const char* file)
+	void Play(const char* file) const
 	{
 		if (!std::filesystem::exists(file))
 			throw "File does not exist";
