@@ -67,6 +67,7 @@ export class AudioPlayer
 		IMMDevice* device = nullptr;
 		result = devices->GetDefaultAudioEndpoint(EDataFlow::eRender, ERole::eMultimedia, &device);
 		ASSERT_RESULT(result);
+		devices->Release();
 
 		return device;
 	}
@@ -110,6 +111,8 @@ export class AudioPlayer
 
 		result = client->GetService(IID_IAudioRenderClient, (void**)&renderer);
 		ASSERT_RESULT(result);
+
+		device->Release();
 	}
 
 	void WriteSilence(UINT32 silenceFrames = 2)
