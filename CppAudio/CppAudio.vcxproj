@@ -167,7 +167,11 @@ exit/B %errlev%</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\AudioPlayer.ixx" />
+    <ClCompile Include="src\Audio\AudioData.ixx" />
+    <ClCompile Include="src\Audio\AudioInfo.ixx" />
+    <ClCompile Include="src\Audio\AudioPlayer.ixx" />
+    <ClCompile Include="src\Audio\AudioWriter.ixx" />
+    <ClCompile Include="src\Audio\Media.ixx" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>

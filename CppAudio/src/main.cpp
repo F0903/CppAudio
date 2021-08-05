@@ -3,5 +3,7 @@ import AudioPlayer;
 int main()
 {
 	auto audio = AudioPlayer();
-	audio.Play("./resources/song.pcm");
+	auto media = Media("./resources/song.pcm");
+
+	audio.Play(media);
 }
