@@ -173,11 +173,11 @@ export class AudioPlayer
 			ASSERT_RESULT(result);
 
 			writtenBytes += byteCount;
-			Sleep(bufferRefSecDuration / refTimesPerMs / 3);
+			Sleep(bufferRefSecDuration / refTimesPerMs / 2);
 		}
 
 		WriteSilence(8, blockAlign);
-		Sleep(bufferRefSecDuration / refTimesPerMs / 3);
+		Sleep(bufferRefSecDuration / refTimesPerMs / 2);
 		result = client->Stop();
 		ASSERT_RESULT(result);
 	}
