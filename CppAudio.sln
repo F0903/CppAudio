@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CppAudio", "CppAudio\CppAudio.vcxproj", "{5511BCAD-B0BF-4C5F-919D-E36C7E19FECB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CppAudioClient", "CppAudioClient\CppAudioClient.vcxproj", "{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{5511BCAD-B0BF-4C5F-919D-E36C7E19FECB}.Release|x64.Build.0 = Release|x64
 		{5511BCAD-B0BF-4C5F-919D-E36C7E19FECB}.Release|x86.ActiveCfg = Release|Win32
 		{5511BCAD-B0BF-4C5F-919D-E36C7E19FECB}.Release|x86.Build.0 = Release|Win32
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Debug|x64.ActiveCfg = Debug|x64
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Debug|x64.Build.0 = Debug|x64
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Debug|x86.ActiveCfg = Debug|Win32
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Debug|x86.Build.0 = Debug|Win32
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Release|x64.ActiveCfg = Release|x64
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Release|x64.Build.0 = Release|x64
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Release|x86.ActiveCfg = Release|Win32
+		{E19E67A1-5DB4-4754-8E4D-D95D5843D32C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

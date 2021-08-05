@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{5511bcad-b0bf-4c5f-919d-e36c7e19fecb}</ProjectGuid>
-    <RootNamespace>CppAudio</RootNamespace>
+    <ProjectGuid>{e19e67a1-5db4-4754-8e4d-d95d5843d32c}</ProjectGuid>
+    <RootNamespace>CppAudioClient</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -88,17 +88,18 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Message>
-      </Message>
-      <Command>
-      </Command>
+      <Command>set/A errlev="%ERRORLEVEL% &amp; 24"
+robocopy "$(ProjectDir)resources"  "$(OutputPath)resources" /mir
+exit/B %errlev%</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy resources</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -109,7 +110,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,10 +118,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Message>
-      </Message>
-      <Command>
-      </Command>
+      <Command>set/A errlev="%ERRORLEVEL% &amp; 24"
+robocopy "$(ProjectDir)resources"  "$(OutputPath)resources" /mir
+exit/B %errlev%</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy resources</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -137,10 +139,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Message>
-      </Message>
-      <Command>
-      </Command>
+      <Command>set/A errlev="%ERRORLEVEL% &amp; 24"
+robocopy "$(ProjectDir)resources"  "$(OutputPath)resources" /mir
+exit/B %errlev%</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy resources</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -151,7 +155,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,21 +163,21 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Message>
-      </Message>
-      <Command>
-      </Command>
+      <Command>set/A errlev="%ERRORLEVEL% &amp; 24"
+robocopy "$(ProjectDir)resources"  "$(OutputPath)resources" /mir
+exit/B %errlev%</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy resources</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Audio\AudioData.ixx" />
-    <ClCompile Include="src\Audio\AudioInfo.ixx" />
-    <ClCompile Include="src\Audio\AudioPlayer.ixx" />
-    <ClCompile Include="src\Audio\AudioWriter.ixx" />
-    <ClCompile Include="src\Audio\Media.ixx" />
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="resources\test_s16le.raw" />
+    <ProjectReference Include="..\CppAudio\CppAudio.vcxproj">
+      <Project>{5511bcad-b0bf-4c5f-919d-e36c7e19fecb}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
