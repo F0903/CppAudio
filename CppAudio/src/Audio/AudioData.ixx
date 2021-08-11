@@ -7,7 +7,7 @@ export struct AudioData
 {
 	const char* ptr;
 	const bool ptrDelete;
-	const unsigned int length;
+	const std::streamsize length;
 
 	private:
 	void Free() const noexcept
@@ -22,7 +22,7 @@ export struct AudioData
 			throw "File does not exist";
 
 		std::ifstream fs(file, std::ifstream::binary);
-		const unsigned int fsLength = fs.seekg(0, fs.end).tellg();
+		const std::streamsize fsLength = fs.seekg(0, fs.end).tellg();
 		fs.seekg(0, fs.beg);
 
 		char* data = new char[fsLength];

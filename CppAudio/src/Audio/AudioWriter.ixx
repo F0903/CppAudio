@@ -11,25 +11,22 @@ module;
 export module AudioWriter;
 import AudioInfo;
 import AudioData;
-
-#if _DEBUG
-#define ASSERT_RESULT(res) if(res != S_OK) throw
-#else
-#define ASSERT_RESULT(res)
-#endif
+import AudioUtils;
 
 export class AudioWriter
 {
 	public:
-	AudioWriter(const AudioInfo& format) : format(format)
+	AudioWriter(const AudioInfo& format) noexcept : format(format)
 	{
 		Setup();
 	}
 
-	~AudioWriter()
+	~AudioWriter() noexcept
 	{
 		renderer->Release();
 		client->Release();
+
+		if (comInit) COMUninit();
 	}
 
 	private:
@@ -48,23 +45,32 @@ export class AudioWriter
 	const AudioInfo& format;
 
 	private:
-	static void COMInit()
+	static void COMInit() noexcept
 	{
 		HRESULT result;
 		result = CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_SPEED_OVER_MEMORY);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 		comInit = true;
 	}
 
-	void Setup()
+	static void COMUninit() noexcept
 	{
+		CoUninitialize();
+		comInit = false;
+	}
+
+	void Setup() const noexcept
+	{
+		//TEST REMOVE
+		DebugAssertResult(S_FALSE);
+
 		if (!comInit) COMInit();
 
 		HRESULT result;
 
 		auto device = GetDevice();
 		result = device->Activate(IID_IAudioClient, CLSCTX_ALL, NULL, (void**)&client);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 
 		const auto blockAlign = format.GetBlockAlign();
 		DWORD avgByteRate = blockAlign * format.sampleRate;
@@ -82,50 +88,56 @@ export class AudioWriter
 
 		WAVEFORMATEX* altFormat;
 		result = client->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, &dataFormat, &altFormat);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 
 		constexpr double bufferSecondDuration = 20.0 / 1000.0;
-		result = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY | AUDCLNT_STREAMFLAGS_EVENTCALLBACK, bufferSecondDuration * refTimesPerSec, 0, &dataFormat, NULL);
-		ASSERT_RESULT(result);
+		result = client->Initialize(
+			AUDCLNT_SHAREMODE_SHARED,
+			AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY | AUDCLNT_STREAMFLAGS_EVENTCALLBACK,
+			static_cast<REFERENCE_TIME>(bufferSecondDuration * refTimesPerSec),
+			0,
+			&dataFormat,
+			NULL);
+		DebugAssertResult(result);
 
 		UINT32 bufSize;
 		result = client->GetBufferSize(&bufSize);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 
 		result = client->GetService(IID_IAudioRenderClient, (void**)&renderer);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 
 		device->Release();
 	}
 
-	IMMDevice* GetDevice() const
+	IMMDevice* GetDevice() const noexcept
 	{
 		HRESULT result;
 
 		IMMDeviceEnumerator* devices = nullptr;
 		result = CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&devices);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 
 		IMMDevice* device = nullptr;
 		result = devices->GetDefaultAudioEndpoint(EDataFlow::eRender, ERole::eMultimedia, &device);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 		devices->Release();
 
 		return device;
 	}
 
-	void WriteSilence(const WORD blockAlign, const UINT32 silenceFrames = 2) const
+	void WriteSilence(const WORD blockAlign, const UINT32 silenceFrames = 2) const noexcept
 	{
 		HRESULT result;
 		BYTE* stream = nullptr;
 		result = renderer->GetBuffer(silenceFrames, &stream);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 		result = renderer->ReleaseBuffer(silenceFrames, AUDCLNT_BUFFERFLAGS_SILENT);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 	}
 
 	public:
-	void Write(const AudioData& data) const
+	bool Write(const AudioData& data) const noexcept
 	{
 		HRESULT result;
 
@@ -133,7 +145,7 @@ export class AudioWriter
 
 		UINT32 bufferFrameSize;
 		result = client->GetBufferSize(&bufferFrameSize);
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 
 		const auto bufferRefSecDuration = refTimesPerSec * bufferFrameSize / format.sampleRate;
 
@@ -141,9 +153,9 @@ export class AudioWriter
 		const auto bufferReadyTimeout = bufferRefSecDuration * 4;
 		client->SetEventHandle(bufferReady);
 
-		WriteSilence(blockAlign, 8);
+		WriteSilence(blockAlign, 4);
 		result = client->Start();
-		ASSERT_RESULT(result);
+		DebugAssertResult(result);
 
 		#ifdef _DEBUG
 		std::chrono::high_resolution_clock timer = std::chrono::high_resolution_clock();
@@ -157,17 +169,17 @@ export class AudioWriter
 			const auto startTime = timer.now();
 			#endif
 
-			const auto waitRes = WaitForSingleObject(bufferReady, bufferReadyTimeout);
+			const auto waitRes = WaitForSingleObject(bufferReady, static_cast<DWORD>(bufferReadyTimeout));
 			if (waitRes != WAIT_OBJECT_0)
 			{
 				if (waitRes == WAIT_ABANDONED || waitRes == WAIT_TIMEOUT)
-					return;
-				throw;
+					return true;
+				return false;
 			}
 
 			UINT32 existingFrames;
 			result = client->GetCurrentPadding(&existingFrames);
-			ASSERT_RESULT(result);
+			DebugAssertResult(result);
 
 			const UINT32 availableFrames = bufferFrameSize - existingFrames;
 			const UINT32 availableBytes = availableFrames * blockAlign;
@@ -177,17 +189,17 @@ export class AudioWriter
 			const auto nextPos = writtenBytes + availableBytes;
 			if (nextPos > data.length)
 			{
-				byteCount = data.length - writtenBytes;
+				byteCount = static_cast<UINT32>(data.length - writtenBytes);
 				framesToRequest = byteCount / blockAlign;
 			}
 
 			result = renderer->GetBuffer(framesToRequest, &out);
-			ASSERT_RESULT(result);
+			DebugAssertResult(result);
 
 			std::copy_n(data.ptr + writtenBytes, byteCount, out);
 
 			result = renderer->ReleaseBuffer(framesToRequest, 0);
-			ASSERT_RESULT(result);
+			DebugAssertResult(result);
 
 			writtenBytes += byteCount;
 
@@ -196,11 +208,12 @@ export class AudioWriter
 			const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
 			std::cout << "Audio pass took " << duration << std::endl;
 			#endif
-	}
+		}
 
-		WriteSilence(blockAlign, 8);
-		Sleep(bufferRefSecDuration / refTimesPerMs);
+		WriteSilence(blockAlign, 4);
+		Sleep(static_cast<DWORD>(bufferRefSecDuration / refTimesPerMs));
 		result = client->Stop();
-		ASSERT_RESULT(result);
-}
+		DebugAssertResult(result);
+		return true;
+	}
 };
